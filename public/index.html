@@ -204,10 +204,13 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
             <button class="btn-ghost red" style="flex:0; padding:6px 14px; font-size:11px;" onclick="clearLog()">🗑️ Clear</button>
         </div>
         <textarea class="output" id="outputArea" readonly>— waiting for generation —</textarea>
+        <div class="field" style="margin-top: 16px; margin-bottom: 10px;">
+            <label>Nama File (Tanpa .txt)</label>
+            <input type="text" id="filenameInput" placeholder="contoh: combosmith" value="smth_result">
+        </div>
         <div class="action-row">
             <button class="btn-ghost" onclick="copyOutput()">📋 Copy</button>
             <button class="btn-ghost" onclick="downloadOutput()">💾 Download</button>
-        </div>
     </div>
 </main>
 <script>
@@ -385,12 +388,19 @@ function copyOutput() {
 
 function downloadOutput() {
     if (!outputData.length) return alert('Nggak ada data!');
-    // Langsung gabungin pake enter aja, tanpa text tambahan
-    const blob = new Blob([outputData.join('\n')], { type: 'text/plain' }); 
+    
+    // Ambil nama dari input, kalau kosong pake default
+    let fname = document.getElementById('filenameInput').value.trim();
+    if (!fname) fname = `smth_${Date.now()}`;
+    
+    // Pastiin formatnya .txt
+    if (!fname.endsWith('.txt')) fname += '.txt';
+    
+    const blob = new Blob([outputData.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `smth_${Date.now()}.txt`;
+    a.download = fname; // <--- Pake nama custom
     a.click();
     URL.revokeObjectURL(url);
 }
