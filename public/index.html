@@ -704,7 +704,8 @@ function copyOutput() {
 
 function downloadOutput() {
     if (!outputData.length) return alert('Nggak ada data!');
-    const blob = new Blob([outputData.join('\n\n=== NEXT FILE ===\n\n')], { type: 'text/plain' });
+    // Langsung gabungin pake enter aja, tanpa text tambahan
+    const blob = new Blob([outputData.join('\n')], { type: 'text/plain' }); 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
