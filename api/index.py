@@ -55,7 +55,7 @@ def generate():
         name_length = data.get('nameLength', 'both')
         count = int(data.get('count', 10))
         
-        if count <= 0 or count > 10000:
+        if count <= 0 or count > 1000000:
             return jsonify({"status": "error", "msg": "Jumlah harus 1-10000"})
         
         pool_words = get_word_pool()
