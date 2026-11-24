@@ -3,652 +3,716 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMTH Toolkit V1</title>
+<title>SMTH Toolkit — Ultra Random</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg: #030407;
+    --surface: rgba(18, 22, 35, 0.6);
+    --border: rgba(255,255,255,0.08);
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --cyan: #22d3ee;
+    --blue: #3b82f6;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --font: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
 body {
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    background: #0a0c10;
-    color: #e2e8f0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    position: relative;
 }
 
-/* Background Grid */
-body::before {
+/* ── AURORA BACKGROUND ── */
+.aurora {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.aurora::before, .aurora::after {
+    content: '';
+    position: absolute;
+    width: 80vmax;
+    height: 80vmax;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.35;
+    animation: drift 20s ease-in-out infinite alternate;
+}
+.aurora::before {
+    background: radial-gradient(circle, #06b6d4, transparent 60%);
+    top: -40vmax; left: -20vmax;
+}
+.aurora::after {
+    background: radial-gradient(circle, #8b5cf6, transparent 60%);
+    bottom: -40vmax; right: -20vmax;
+    animation-delay: -10s;
+}
+@keyframes drift {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(10vmax, 5vmax) scale(1.2); }
+}
+
+/* ── NOISE OVERLAY ── */
+body::after {
     content: '';
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: 
-        linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px;
+    inset: 0;
+    z-index: 1;
     pointer-events: none;
-    z-index: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Header */
-.header {
+/* ── HEADER ── */
+header {
     position: relative;
     z-index: 10;
+    padding: 24px 40px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 40px;
-    background: rgba(15, 17, 26, 0.8);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid #1e2638;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    background: rgba(3, 4, 7, 0.6);
 }
-.logo { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
-.badge { background: linear-gradient(135deg, #f59e0b, #ef4444); padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; letter-spacing: 1px; }
-
-/* Main Container */
-.container {
-    position: relative;
-    z-index: 5;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-}
-
-/* Panels */
-.panel {
-    background: rgba(20, 26, 41, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid #1e2638;
-    border-radius: 16px;
-    padding: 30px;
-}
-.panel h2 {
-    font-size: 18px;
-    margin-bottom: 20px;
-    color: #06b6d4;
-    font-weight: 800;
+.brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
 }
-.panel h2::before {
-    content: '';
-    width: 4px;
-    height: 20px;
-    background: linear-gradient(180deg, #06b6d4, #3b82f6);
-    border-radius: 2px;
+.logo-mark {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 18px;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(34,211,238,0.4);
 }
-
-/* Form Groups */
-.form-group { margin-bottom: 20px; }
-.form-group label {
-    display: block;
+.brand-text h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.brand-text span {
     font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #8b9bb4;
-    margin-bottom: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+}
+.badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 6px 12px;
+    border-radius: 100px;
+    background: rgba(34,211,238,0.1);
+    border: 1px solid rgba(34,211,238,0.3);
+    color: var(--cyan);
     letter-spacing: 1px;
 }
-.options {
+
+/* ── LAYOUT ── */
+main {
+    position: relative;
+    z-index: 10;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 28px;
+}
+@media (max-width: 960px) {
+    main { grid-template-columns: 1fr; }
+}
+
+/* ── GLASS PANEL ── */
+.glass {
+    background: var(--surface);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent 40%, transparent 60%, rgba(255,255,255,0.05));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* ── TABS ── */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    background: rgba(0,0,0,0.3);
+    padding: 6px;
+    border-radius: 14px;
+}
+.tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.5px;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ── FORM ── */
+.field { margin-bottom: 22px; }
+.field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+.chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
-.option-btn {
-    padding: 10px 20px;
-    background: rgba(15, 17, 26, 0.8);
-    border: 1px solid #2a2a4a;
-    border-radius: 8px;
-    color: #8b9bb4;
-    cursor: pointer;
-    font-size: 13px;
+.chip {
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 12px;
     font-weight: 600;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
     transition: all 0.2s;
 }
-.option-btn:hover { border-color: #3b82f6; color: #fff; }
-.option-btn.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border-color: #3b82f6;
-    color: #fff;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+.chip:hover {
+    border-color: rgba(34,211,238,0.4);
+    color: var(--text);
 }
-
-/* Input */
-input[type="number"], input[type="text"], input[type="file"], textarea {
+.chip.active {
+    background: linear-gradient(135deg, rgba(34,211,238,0.2), rgba(59,130,246,0.2));
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 16px rgba(34,211,238,0.2);
+}
+input[type="number"], input[type="text"], textarea {
     width: 100%;
-    padding: 12px 16px;
-    background: rgba(15, 17, 26, 0.8);
-    border: 1px solid #2a2a4a;
-    border-radius: 8px;
-    color: #fff;
+    padding: 14px 16px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: var(--mono);
     font-size: 14px;
     outline: none;
-    transition: 0.3s;
-    font-family: inherit;
+    transition: all 0.25s;
 }
-input:focus, textarea:focus { border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+input:focus, textarea:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(34,211,238,0.1);
+}
 
-/* Button */
-.btn-generate {
+/* ── BUTTON ── */
+.btn-primary {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #10b981, #059669);
     border: none;
-    border-radius: 12px;
-    color: #fff;
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: 2px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    color: #020617;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
     transition: all 0.3s;
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 8px 30px rgba(34,211,238,0.25);
 }
-.btn-generate:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 35px rgba(16, 185, 129, 0.5);
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
 }
-.btn-generate:disabled {
-    background: #2d3748;
+.btn-primary:hover::after { transform: translateX(100%); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(34,211,238,0.4); }
+.btn-primary:disabled {
+    background: #1e293b;
+    color: var(--muted);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
 
-/* Stats */
-.stats-grid {
+/* ── STATS ── */
+.stats {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
     margin-bottom: 20px;
 }
-.stat-card {
-    background: rgba(15, 17, 26, 0.8);
-    border: 1px solid #1e2638;
-    border-radius: 12px;
-    padding: 15px;
-    text-align: center;
-}
-.stat-card .val {
-    font-size: 24px;
-    font-weight: 900;
-    color: #06b6d4;
-    font-family: 'Consolas', monospace;
-}
-.stat-card .lbl {
-    font-size: 10px;
-    color: #8b9bb4;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 5px;
-}
-
-/* Progress Bar */
-.progress-container {
-    margin: 20px 0;
-    background: rgba(15, 17, 26, 0.8);
-    border-radius: 12px;
+.stat {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
     overflow: hidden;
-    height: 30px;
+}
+.stat-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+.stat-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+.stat-value.cyan { color: var(--cyan); }
+.stat-value.green { color: var(--green); }
+.stat-value.amber { color: var(--amber); }
+
+/* ── PROGRESS ── */
+.progress-wrap {
+    height: 6px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 20px;
     position: relative;
 }
 .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #06b6d4);
     width: 0%;
-    transition: width 0.3s;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
-}
-.progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-weight: 800;
-    font-size: 12px;
-    color: #fff;
-    text-shadow: 0 0 10px rgba(0,0,0,0.8);
-    z-index: 2;
+    background: linear-gradient(90deg, var(--cyan), var(--blue), #8b5cf6);
+    border-radius: 100px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 20px rgba(34,211,238,0.6);
 }
 
-/* Output */
-.output-area {
-    width: 100%;
-    height: 300px;
+/* ── OUTPUT ── */
+.output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.output-head h2 {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.output-head h2::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 50% { opacity: 0.4; } }
+.output {
     background: #000;
-    border: 1px solid #1e2638;
-    border-radius: 12px;
-    padding: 15px;
-    font-family: 'Consolas', monospace;
-    font-size: 12px;
-    color: #10b981;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--green);
+    height: 380px;
     overflow-y: auto;
     white-space: pre-wrap;
     word-break: break-all;
 }
+.output::-webkit-scrollbar { width: 6px; }
+.output::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+.output::-webkit-scrollbar-thumb:hover { background: var(--blue); }
 
-/* Tabs */
-.tabs {
+.action-row {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-top: 16px;
 }
-.tab {
-    padding: 10px 20px;
-    background: rgba(15, 17, 26, 0.8);
-    border: 1px solid #1e2638;
-    border-radius: 8px;
-    color: #8b9bb4;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 13px;
-    transition: all 0.2s;
-}
-.tab.active {
-    background: rgba(6, 182, 212, 0.1);
-    border-color: #06b6d4;
-    color: #06b6d4;
-}
-
-/* Action Buttons */
-.action-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-.action-btn {
+.btn-ghost {
     flex: 1;
-    padding: 10px;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid #3b82f6;
-    border-radius: 8px;
-    color: #3b82f6;
-    cursor: pointer;
-    font-weight: 700;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+    font-family: var(--font);
     font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
     transition: all 0.2s;
 }
-.action-btn:hover {
-    background: #3b82f6;
-    color: #fff;
+.btn-ghost:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(34,211,238,0.05);
+}
+.btn-ghost.red:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(248,113,113,0.05);
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-    .container { grid-template-columns: 1fr; }
-    .header { padding: 15px 20px; }
-    .logo { font-size: 20px; }
-}
+.hidden { display: none; }
 </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="logo">SMTH <span style="font-size: 14px; color: #3b82f6;">v2.5</span></div>
-    <div class="badge">Property and License by SMITH</div>
-</div>
+<div class="aurora"></div>
 
-<div class="container">
-    
-    <!-- KOLOM KIRI: KONFIGURASI -->
-    <div class="panel">
-        <!-- TABS UTAMA -->
-        <div class="tabs" style="margin-bottom: 20px;">
-            <div class="tab active" onclick="switchMainTab('gen')">⚡ Generator</div>
-            <div class="tab" onclick="switchMainTab('dup')">🔍 Cek Duplikat</div>
+<header>
+    <div class="brand">
+        <div class="logo-mark">S</div>
+        <div class="brand-text">
+            <h1>SMTH Toolkit</h1>
+            <span>v2.5 · ultra random engine</span>
+        </div>
+    </div>
+    <div class="badge">PROPERTY OF SMTH</div>
+</header>
+
+<main>
+    <!-- PANEL KIRI -->
+    <div class="glass">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(event, 'gen')">⚡ Generator</div>
+            <div class="tab" onclick="switchTab(event, 'split')">✂️ Split</div>
+            <div class="tab" onclick="switchTab(event, 'dup')">🔍 Duplikat</div>
         </div>
 
-        <!-- TAB 1: GENERATOR -->
+        <!-- TAB GENERATOR -->
         <div id="tab-gen">
-            <h2>⚙️ Generator Mode</h2>
-            
-            <div class="form-group">
+            <div class="field">
                 <label>Generation Mode</label>
-                <div class="options" id="modeOptions">
-                    <div class="option-btn active" data-mode="plain">Plain</div>
-                    <div class="option-btn" data-mode="2digit">+2 Digits</div>
-                    <div class="option-btn" data-mode="3digit">+3 Digits</div>
-                    <div class="option-btn" data-mode="4digit">+4 Digits</div>
-                    <div class="option-btn" data-mode="mix">Mix All</div>
+                <div class="chips" id="modeChips">
+                    <div class="chip active" data-mode="plain">Plain</div>
+                    <div class="chip" data-mode="2digit">+2 Digits</div>
+                    <div class="chip" data-mode="3digit">+3 Digits</div>
+                    <div class="chip" data-mode="4digit">+4 Digits</div>
+                    <div class="chip" data-mode="mix">Mix All</div>
                 </div>
             </div>
-
-            <div class="form-group">
+            <div class="field">
                 <label>Region</label>
-                <div class="options" id="regionOptions">
-                    <div class="option-btn active" data-region="indonesia">Indonesia</div>
-                    <div class="option-btn" data-region="philippines">Philippines</div>
-                    <div class="option-btn" data-region="malaysia">Malaysia</div>
-                    <div class="option-btn" data-region="singapore">Singapore</div>
+                <div class="chips" id="regionChips">
+                    <div class="chip active" data-region="indonesia">🇮🇩 Indonesia</div>
+                    <div class="chip" data-region="philippines">🇵🇭 Philippines</div>
+                    <div class="chip" data-region="malaysia">🇲🇾 Malaysia</div>
+                    <div class="chip" data-region="singapore">🇸🇬 Singapore</div>
                 </div>
             </div>
-
-            <div class="form-group">
+            <div class="field">
                 <label>Combo Count</label>
                 <input type="number" id="comboCount" value="100" min="1" max="10000">
             </div>
-
-            <button class="btn-generate" id="btnGenerate" onclick="generate()">
-                ⚡ GENERATE ULTRACOMBO
-            </button>
+            <button class="btn-primary" id="btnGenerate" onclick="generate()">⚡ Generate UltraCombo</button>
         </div>
 
-        <!-- TAB 2: SPLIT COMBO -->
-        <div id="tab-split" style="display:none;">
-            <h2>✂️ Split Combo</h2>
-            
-            <div class="form-group">
-                <label>Upload File Combo (.txt)</label>
-                <input type="file" id="splitFileInput" accept=".txt" style="padding: 10px;">
+        <!-- TAB SPLIT -->
+        <div id="tab-split" class="hidden">
+            <div class="field">
+                <label>Upload File (.txt)</label>
+                <input type="file" id="splitFile" accept=".txt" style="padding:10px;">
             </div>
-            
-            <div class="form-group">
+            <div class="field">
                 <label>Atau Paste Manual</label>
-                <textarea id="splitText" placeholder="email:pass per baris..." style="height:100px;"></textarea>
+                <textarea id="splitText" placeholder="email:pass per baris..." style="height:120px;"></textarea>
             </div>
-
-            <div class="form-group">
-                <label>Jumlah Baris per File (Chunk)</label>
+            <div class="field">
+                <label>Baris per File</label>
                 <input type="number" id="chunkSize" value="100" min="1">
             </div>
-
-            <button class="btn-generate" id="btnSplit" onclick="splitFile()">
-                ✂️ SPLIT SEKARANG
-            </button>
+            <button class="btn-primary" id="btnSplit" onclick="splitFile()">✂️ Split Sekarang</button>
         </div>
 
-        <!-- TAB 3: CEK DUPLIKAT -->
-        <div id="tab-dup" style="display:none;">
-            <h2>🔍 Cek Duplikat</h2>
-            
-            <div class="form-group">
+        <!-- TAB DUPLIKAT -->
+        <div id="tab-dup" class="hidden">
+            <div class="field">
                 <label>Upload File (.txt)</label>
-                <input type="file" id="dupFileInput" accept=".txt" style="padding: 10px;">
+                <input type="file" id="dupFile" accept=".txt" style="padding:10px;">
             </div>
-            
-            <div class="form-group">
+            <div class="field">
                 <label>Atau Paste Manual</label>
                 <textarea id="dupText" placeholder="Paste combo di sini..." style="height:150px;"></textarea>
             </div>
-
-            <button class="btn-generate" onclick="checkDuplicates()">
-                🔍 CEK DUPLIKAT
-            </button>
-            
-            <div id="dupResult" style="margin-top:15px; font-family:monospace; color:#10b981;"></div>
+            <button class="btn-primary" onclick="checkDuplicates()">🔍 Cek Duplikat</button>
+            <div id="dupResult" style="margin-top:16px; font-family:var(--mono); font-size:12px; color:var(--muted); line-height:1.8;"></div>
         </div>
     </div>
 
-    <!-- KOLOM KANAN: OUTPUT -->
-    <div class="panel">
-        <h2>📊 Live Output</h2>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="val" id="statTotal">0</div>
-                <div class="lbl">Generated</div>
+    <!-- PANEL KANAN -->
+    <div class="glass">
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Generated</div>
+                <div class="stat-value cyan" id="statTotal">0</div>
             </div>
-            <div class="stat-card">
-                <div class="val" id="statDup">0</div>
-                <div class="lbl">Duplicates</div>
+            <div class="stat">
+                <div class="stat-label">Duplicates</div>
+                <div class="stat-value amber" id="statDup">0</div>
             </div>
-            <div class="stat-card">
-                <div class="val" id="statSpeed">0</div>
-                <div class="lbl">/sec</div>
+            <div class="stat">
+                <div class="stat-label">Speed</div>
+                <div class="stat-value green" id="statSpeed">0/sec</div>
             </div>
         </div>
 
-        <div class="progress-container">
+        <div class="progress-wrap">
             <div class="progress-bar" id="progressBar"></div>
-            <div class="progress-text" id="progressText">0%</div>
         </div>
 
-        <div class="output-area" id="outputArea">— waiting for generation —</div>
-        
-        <div class="action-group">
-            <button class="action-btn" onclick="copyOutput()">📋 Copy</button>
-            <button class="action-btn" onclick="downloadOutput()">💾 Download</button>
+        <div class="output-head">
+            <h2>Live Output</h2>
+            <button class="btn-ghost red" style="flex:0; padding:6px 14px; font-size:11px;" onclick="clearLog()">🗑️ Clear</button>
+        </div>
+        <div class="output" id="outputArea">— waiting for generation —</div>
+
+        <div class="action-row">
+            <button class="btn-ghost" onclick="copyOutput()">📋 Copy</button>
+            <button class="btn-ghost" onclick="downloadOutput()">💾 Download</button>
         </div>
     </div>
-
-</div>
+</main>
 
 <script>
 let currentMode = 'plain';
 let currentRegion = 'indonesia';
 let outputData = [];
 
-// Handle option clicks
-document.querySelectorAll('#modeOptions .option-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#modeOptions .option-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentMode = btn.dataset.mode;
+// Chip handler
+document.querySelectorAll('#modeChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+        document.querySelectorAll('#modeChips .chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        currentMode = c.dataset.mode;
+    });
+});
+document.querySelectorAll('#regionChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+        document.querySelectorAll('#regionChips .chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        currentRegion = c.dataset.region;
     });
 });
 
-document.querySelectorAll('#regionOptions .option-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#regionOptions .option-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentRegion = btn.dataset.region;
-    });
-});
-
-// Tab switching
-function switchMainTab(tab) {
+function switchTab(e, tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    document.getElementById('tab-gen').style.display = 'none';
-    document.getElementById('tab-split').style.display = 'none';
-    document.getElementById('tab-dup').style.display = 'none';
-    
-    if (tab === 'gen') document.getElementById('tab-gen').style.display = 'block';
-    if (tab === 'split') document.getElementById('tab-split').style.display = 'block';
-    if (tab === 'dup') document.getElementById('tab-dup').style.display = 'block';
+    e.target.classList.add('active');
+    ['gen','split','dup'].forEach(t => {
+        document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab);
+    });
 }
 
-// Generate function
+// ── CLEAR LOG ──
+function clearLog() {
+    document.getElementById('outputArea').textContent = '— waiting for generation —';
+    document.getElementById('statTotal').textContent = '0';
+    document.getElementById('statDup').textContent = '0';
+    document.getElementById('statSpeed').textContent = '0/sec';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('dupResult').innerHTML = '';
+    outputData = [];
+}
+
 async function generate() {
     const count = parseInt(document.getElementById('comboCount').value);
     const btn = document.getElementById('btnGenerate');
-    const output = document.getElementById('outputArea');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
+    const out = document.getElementById('outputArea');
+    const bar = document.getElementById('progressBar');
     
     btn.disabled = true;
-    btn.textContent = '⏳ GENERATING...';
-    output.textContent = '— processing —';
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
+    btn.textContent = '⏳ Generating...';
+    out.textContent = '— processing —';
+    bar.style.width = '0%';
     
-    const startTime = Date.now();
-    let progress = 0;
-    
-    const progressInterval = setInterval(() => {
-        progress += Math.random() * 15;
-        if (progress > 95) progress = 95;
-        progressBar.style.width = progress + '%';
-        progressText.textContent = Math.floor(progress) + '%';
+    const t0 = Date.now();
+    let p = 0;
+    const iv = setInterval(() => {
+        p = Math.min(95, p + Math.random() * 15);
+        bar.style.width = p + '%';
     }, 100);
     
     try {
-        const response = await fetch('/api/generate', {
+        const res = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                mode: currentMode,
-                region: currentRegion,
-                count: count
-            })
+            body: JSON.stringify({ mode: currentMode, region: currentRegion, count })
         });
-        
-        const data = await response.json();
-        
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        progressText.textContent = '100%';
+        const data = await res.json();
+        clearInterval(iv);
+        bar.style.width = '100%';
         
         if (data.status === 'success') {
-            const elapsed = (Date.now() - startTime) / 1000;
-            const speed = Math.round(data.total / elapsed);
-            
+            const elapsed = (Date.now() - t0) / 1000;
             document.getElementById('statTotal').textContent = data.total.toLocaleString();
             document.getElementById('statDup').textContent = '0';
-            document.getElementById('statSpeed').textContent = speed;
-            
-            output.textContent = data.data.join('\n');
+            document.getElementById('statSpeed').textContent = Math.round(data.total / elapsed) + '/sec';
+            out.textContent = data.data.join('\n');
             outputData = data.data;
-            
-            btn.textContent = '✅ SELESAI!';
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.textContent = '⚡ GENERATE ULTRACOMBO';
-            }, 1500);
+            btn.textContent = '✅ Done!';
+            setTimeout(() => { btn.disabled = false; btn.textContent = '⚡ Generate UltraCombo'; }, 1500);
         } else {
-            output.textContent = '❌ Error: ' + data.msg;
+            out.textContent = '❌ ' + data.msg;
             btn.disabled = false;
-            btn.textContent = '⚡ GENERATE ULTRACOMBO';
+            btn.textContent = '⚡ Generate UltraCombo';
         }
     } catch (e) {
-        clearInterval(progressInterval);
-        output.textContent = '❌ Network Error: ' + e.message;
+        clearInterval(iv);
+        out.textContent = '❌ Network Error: ' + e.message;
         btn.disabled = false;
-        btn.textContent = '⚡ GENERATE ULTRACOMBO';
+        btn.textContent = '⚡ Generate UltraCombo';
     }
 }
 
-// Split function
 async function splitFile() {
-    const fileInput = document.getElementById('splitFileInput');
-    const textArea = document.getElementById('splitText');
-    const chunkSize = document.getElementById('chunkSize').value;
+    const fi = document.getElementById('splitFile');
+    const ta = document.getElementById('splitText');
+    const chunk = parseInt(document.getElementById('chunkSize').value);
     const btn = document.getElementById('btnSplit');
     
-    let textContent = '';
-    
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        textContent = await file.text();
-    } else if (textArea.value.trim()) {
-        textContent = textArea.value;
-    } else {
-        alert('Pilih file atau paste text dulu!');
-        return;
-    }
+    let text = '';
+    if (fi.files.length) text = await fi.files[0].text();
+    else if (ta.value.trim()) text = ta.value;
+    else return alert('Pilih file atau paste text!');
     
     btn.disabled = true;
-    btn.textContent = '⏳ SPLITTING...';
+    btn.textContent = '⏳ Splitting...';
     
     try {
-        const response = await fetch('/api/split', {
+        const res = await fetch('/api/split', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: textContent, chunkSize: parseInt(chunkSize) })
+            body: JSON.stringify({ text, chunkSize: chunk })
         });
-        
-        const data = await response.json();
-        
+        const data = await res.json();
         if (data.status === 'success') {
-            let html = `✅ Split berhasil! Total ${data.total_lines} baris jadi ${data.total_files} file.\n\n`;
+            let html = `✅ Split berhasil! ${data.total_lines} baris → ${data.total_files} file.\n\n`;
             outputData = [];
-            data.parts.forEach(part => {
-                html += `=== PART ${part.part} ===\n${part.content}\n\n`;
-                outputData.push(part.content);
+            data.parts.forEach(p => {
+                html += `=== PART ${p.part} ===\n${p.content}\n\n`;
+                outputData.push(p.content);
             });
-            
             document.getElementById('outputArea').textContent = html;
-            
-            btn.textContent = '✅ SELESAI!';
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.textContent = '✂️ SPLIT SEKARANG';
-            }, 1500);
+            btn.textContent = '✅ Done!';
+            setTimeout(() => { btn.disabled = false; btn.textContent = '✂️ Split Sekarang'; }, 1500);
         } else {
             alert('Error: ' + data.msg);
             btn.disabled = false;
-            btn.textContent = '✂️ SPLIT SEKARANG';
+            btn.textContent = '✂️ Split Sekarang';
         }
     } catch (e) {
         alert('Error: ' + e.message);
         btn.disabled = false;
-        btn.textContent = '✂️ SPLIT SEKARANG';
+        btn.textContent = '✂️ Split Sekarang';
     }
 }
 
-// Check duplicates
 async function checkDuplicates() {
-    const fileInput = document.getElementById('dupFileInput');
-    const textArea = document.getElementById('dupText');
+    const fi = document.getElementById('dupFile');
+    const ta = document.getElementById('dupText');
+    const res = document.getElementById('dupResult');
     
-    let textContent = '';
-    
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        textContent = await file.text();
-    } else if (textArea.value.trim()) {
-        textContent = textArea.value;
-    } else {
-        alert('Pilih file atau paste text dulu!');
-        return;
-    }
+    let text = '';
+    if (fi.files.length) text = await fi.files[0].text();
+    else if (ta.value.trim()) text = ta.value;
+    else return alert('Pilih file atau paste text!');
     
     try {
-        const response = await fetch('/api/check-duplicates', {
+        const r = await fetch('/api/check-duplicates', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: textContent })
+            body: JSON.stringify({ text })
         });
-        
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            let html = `
-                <div>Total Lines: <b>${data.total_lines}</b></div>
-                <div>Unique: <b>${data.unique}</b></div>
-                <div>Duplicates: <b style="color:#ef4444">${data.dupes}</b></div>
-                <div>Extra Entries: <b style="color:#f59e0b">${data.extra}</b></div>
+        const d = await r.json();
+        if (d.status === 'success') {
+            let h = `
+                <div>Total: <b style="color:var(--text)">${d.total_lines}</b></div>
+                <div>Unique: <b style="color:var(--cyan)">${d.unique}</b></div>
+                <div>Duplikat: <b style="color:var(--red)">${d.dupes}</b></div>
+                <div>Extra: <b style="color:var(--amber)">${d.extra}</b></div>
             `;
-            if (data.duplicate_list.length > 0) {
-                html += '<br><b>Duplicate List:</b><br>';
-                data.duplicate_list.slice(0, 20).forEach(d => {
-                    html += `<div>${d.item} | ${d.count}x</div>`;
+            if (d.duplicate_list.length) {
+                h += '<div style="margin-top:12px;color:var(--muted);font-size:11px;">Top Duplicates:</div>';
+                d.duplicate_list.slice(0, 10).forEach(x => {
+                    h += `<div style="font-size:11px;color:var(--amber)">${x.item} · ${x.count}x</div>`;
                 });
             }
-            document.getElementById('dupResult').innerHTML = html;
+            res.innerHTML = h;
         }
     } catch (e) {
-        document.getElementById('dupResult').textContent = 'Error: ' + e.message;
+        res.textContent = 'Error: ' + e.message;
     }
 }
 
-// Copy output
 function copyOutput() {
-    const text = document.getElementById('outputArea').textContent;
-    navigator.clipboard.writeText(text).then(() => {
-        alert('✅ Copied to clipboard!');
-    });
+    navigator.clipboard.writeText(document.getElementById('outputArea').textContent)
+        .then(() => alert('✅ Copied!'));
 }
 
-// Download output
 function downloadOutput() {
-    if (outputData.length === 0) {
-        alert('Nggak ada data buat di-download!');
-        return;
-    }
-    
-    // Kalau lebih dari 1 file, bikin zip manual (gabungin pake separator)
-    const text = outputData.join('\n\n=== NEXT FILE ===\n\n');
-    const blob = new Blob([text], { type: 'text/plain' });
+    if (!outputData.length) return alert('Nggak ada data!');
+    const blob = new Blob([outputData.join('\n\n=== NEXT FILE ===\n\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `smth_result_${Date.now()}.txt`;
+    a.download = `smth_${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
 }
 </script>
-
 </body>
 </html>
