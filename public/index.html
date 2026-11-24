@@ -5,7 +5,280 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SMTH Toolkit v2.5 — Ultra Random</title>
 <style>
-/* ... (CSS sama kayak sebelumnya, ga gua tulis ulang biar ga kepanjangan, lo tinggal pake CSS lo yang lama) ... */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: #0a0c10;
+    color: #e2e8f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Background Grid */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: 
+        linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Header */
+.header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    background: rgba(15, 17, 26, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #1e2638;
+}
+.logo { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
+.badge { background: linear-gradient(135deg, #f59e0b, #ef4444); padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; letter-spacing: 1px; }
+
+/* Main Container */
+.container {
+    position: relative;
+    z-index: 5;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+/* Panels */
+.panel {
+    background: rgba(20, 26, 41, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid #1e2638;
+    border-radius: 16px;
+    padding: 30px;
+}
+.panel h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #06b6d4;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.panel h2::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #06b6d4, #3b82f6);
+    border-radius: 2px;
+}
+
+/* Form Groups */
+.form-group { margin-bottom: 20px; }
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #8b9bb4;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+.options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.option-btn {
+    padding: 10px 20px;
+    background: rgba(15, 17, 26, 0.8);
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    color: #8b9bb4;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.option-btn:hover { border-color: #3b82f6; color: #fff; }
+.option-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Input */
+input[type="number"], input[type="text"], input[type="file"], textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(15, 17, 26, 0.8);
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: 0.3s;
+    font-family: inherit;
+}
+input:focus, textarea:focus { border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+
+/* Button */
+.btn-generate {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+.btn-generate:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(16, 185, 129, 0.5);
+}
+.btn-generate:disabled {
+    background: #2d3748;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: rgba(15, 17, 26, 0.8);
+    border: 1px solid #1e2638;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+}
+.stat-card .val {
+    font-size: 24px;
+    font-weight: 900;
+    color: #06b6d4;
+    font-family: 'Consolas', monospace;
+}
+.stat-card .lbl {
+    font-size: 10px;
+    color: #8b9bb4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 5px;
+}
+
+/* Progress Bar */
+.progress-container {
+    margin: 20px 0;
+    background: rgba(15, 17, 26, 0.8);
+    border-radius: 12px;
+    overflow: hidden;
+    height: 30px;
+    position: relative;
+}
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+}
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 800;
+    font-size: 12px;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    z-index: 2;
+}
+
+/* Output */
+.output-area {
+    width: 100%;
+    height: 300px;
+    background: #000;
+    border: 1px solid #1e2638;
+    border-radius: 12px;
+    padding: 15px;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    color: #10b981;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.tab {
+    padding: 10px 20px;
+    background: rgba(15, 17, 26, 0.8);
+    border: 1px solid #1e2638;
+    border-radius: 8px;
+    color: #8b9bb4;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.tab.active {
+    background: rgba(6, 182, 212, 0.1);
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+/* Action Buttons */
+.action-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+.action-btn {
+    flex: 1;
+    padding: 10px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    color: #3b82f6;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+.action-btn:hover {
+    background: #3b82f6;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+    .header { padding: 15px 20px; }
+    .logo { font-size: 20px; }
+}
 </style>
 </head>
 <body>
@@ -72,7 +345,7 @@
             
             <div class="form-group">
                 <label>Atau Paste Manual</label>
-                <textarea id="splitText" placeholder="email:pass per baris..." style="width:100%; height:100px; background:#000; border:1px solid #1e2638; border-radius:8px; padding:10px; color:#fff; font-family:monospace;"></textarea>
+                <textarea id="splitText" placeholder="email:pass per baris..." style="height:100px;"></textarea>
             </div>
 
             <div class="form-group">
@@ -96,7 +369,7 @@
             
             <div class="form-group">
                 <label>Atau Paste Manual</label>
-                <textarea id="dupText" placeholder="Paste combo di sini..." style="width:100%; height:150px; background:#000; border:1px solid #1e2638; border-radius:8px; padding:10px; color:#fff; font-family:monospace;"></textarea>
+                <textarea id="dupText" placeholder="Paste combo di sini..." style="height:150px;"></textarea>
             </div>
 
             <button class="btn-generate" onclick="checkDuplicates()">
@@ -142,11 +415,26 @@
 </div>
 
 <script>
-// ... (Variabel global sama kayak sebelumnya) ...
 let currentMode = 'plain';
 let currentRegion = 'indonesia';
-let currentLength = 'both';
-let outputData = []; // Simpen hasil buat di-download
+let outputData = [];
+
+// Handle option clicks
+document.querySelectorAll('#modeOptions .option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#modeOptions .option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMode = btn.dataset.mode;
+    });
+});
+
+document.querySelectorAll('#regionOptions .option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#regionOptions .option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentRegion = btn.dataset.region;
+    });
+});
 
 // Tab switching
 function switchMainTab(tab) {
@@ -162,9 +450,77 @@ function switchMainTab(tab) {
     if (tab === 'dup') document.getElementById('tab-dup').style.display = 'block';
 }
 
-// ... (Fungsi generate() sama kayak sebelumnya) ...
+// Generate function
+async function generate() {
+    const count = parseInt(document.getElementById('comboCount').value);
+    const btn = document.getElementById('btnGenerate');
+    const output = document.getElementById('outputArea');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    btn.disabled = true;
+    btn.textContent = '⏳ GENERATING...';
+    output.textContent = '— processing —';
+    progressBar.style.width = '0%';
+    progressText.textContent = '0%';
+    
+    const startTime = Date.now();
+    let progress = 0;
+    
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 95) progress = 95;
+        progressBar.style.width = progress + '%';
+        progressText.textContent = Math.floor(progress) + '%';
+    }, 100);
+    
+    try {
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mode: currentMode,
+                region: currentRegion,
+                count: count
+            })
+        });
+        
+        const data = await response.json();
+        
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressText.textContent = '100%';
+        
+        if (data.status === 'success') {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const speed = Math.round(data.total / elapsed);
+            
+            document.getElementById('statTotal').textContent = data.total.toLocaleString();
+            document.getElementById('statDup').textContent = '0';
+            document.getElementById('statSpeed').textContent = speed;
+            
+            output.textContent = data.data.join('\n');
+            outputData = data.data;
+            
+            btn.textContent = '✅ SELESAI!';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = '⚡ GENERATE ULTRACOMBO';
+            }, 1500);
+        } else {
+            output.textContent = '❌ Error: ' + data.msg;
+            btn.disabled = false;
+            btn.textContent = '⚡ GENERATE ULTRACOMBO';
+        }
+    } catch (e) {
+        clearInterval(progressInterval);
+        output.textContent = '❌ Network Error: ' + e.message;
+        btn.disabled = false;
+        btn.textContent = '⚡ GENERATE ULTRACOMBO';
+    }
+}
 
-// ── FUNGSI SPLIT FILE ──
+// Split function
 async function splitFile() {
     const fileInput = document.getElementById('splitFileInput');
     const textArea = document.getElementById('splitText');
@@ -173,7 +529,6 @@ async function splitFile() {
     
     let textContent = '';
     
-    // Ambil dari file kalau ada
     if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         textContent = await file.text();
@@ -197,16 +552,14 @@ async function splitFile() {
         const data = await response.json();
         
         if (data.status === 'success') {
-            // Tampilin di output
             let html = `✅ Split berhasil! Total ${data.total_lines} baris jadi ${data.total_files} file.\n\n`;
+            outputData = [];
             data.parts.forEach(part => {
                 html += `=== PART ${part.part} ===\n${part.content}\n\n`;
+                outputData.push(part.content);
             });
             
             document.getElementById('outputArea').textContent = html;
-            
-            // Simpen buat download (bikin zip)
-            outputData = data.parts.map(p => p.content);
             
             btn.textContent = '✅ SELESAI!';
             setTimeout(() => {
@@ -225,7 +578,7 @@ async function splitFile() {
     }
 }
 
-// ── FUNGSI CEK DUPLIKAT ──
+// Check duplicates
 async function checkDuplicates() {
     const fileInput = document.getElementById('dupFileInput');
     const textArea = document.getElementById('dupText');
@@ -271,7 +624,31 @@ async function checkDuplicates() {
     }
 }
 
-// ... (Fungsi copyOutput, downloadOutput, generate sama kayak sebelumnya) ...
+// Copy output
+function copyOutput() {
+    const text = document.getElementById('outputArea').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Copied to clipboard!');
+    });
+}
+
+// Download output
+function downloadOutput() {
+    if (outputData.length === 0) {
+        alert('Nggak ada data buat di-download!');
+        return;
+    }
+    
+    // Kalau lebih dari 1 file, bikin zip manual (gabungin pake separator)
+    const text = outputData.join('\n\n=== NEXT FILE ===\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `smth_result_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
