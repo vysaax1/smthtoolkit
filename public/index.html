@@ -166,7 +166,11 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
                 <label>Baris per File</label>
                 <input type="number" id="chunkSize" value="100" min="1">
             </div>
-            <button class="btn-primary" id="btnSplit" onclick="splitFile()">✂️ Split Sekarang</button>
+            <div class="field">
+                <label>Nama File ZIP</label>
+                <input type="text" id="splitFilename" placeholder="contoh: combosplit" value="split_result">
+            </div>
+            <button class="btn-primary" id="btnSplit" onclick="splitFile()">✂️ Split & Download ZIP</button>
         </div>
         <div id="tab-dup" class="hidden">
             <div class="field">
@@ -211,6 +215,7 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
         <div class="action-row">
             <button class="btn-ghost" onclick="copyOutput()">📋 Copy</button>
             <button class="btn-ghost" onclick="downloadOutput()">💾 Download</button>
+        </div>
     </div>
 </main>
 <script>
@@ -256,19 +261,19 @@ async function generate() {
     const btn = document.getElementById('btnGenerate');
     const out = document.getElementById('outputArea');
     const bar = document.getElementById('progressBar');
-    
+
     btn.disabled = true;
     btn.textContent = '⏳ Generating...';
     out.value = '— processing —';
     bar.style.width = '0%';
-    
+
     const t0 = Date.now();
     let p = 0;
     const iv = setInterval(() => {
         p = Math.min(95, p + Math.random() * 15);
         bar.style.width = p + '%';
     }, 100);
-    
+
     try {
         const res = await fetch('/api/generate', {
             method: 'POST',
@@ -278,7 +283,7 @@ async function generate() {
         const data = await res.json();
         clearInterval(iv);
         bar.style.width = '100%';
-        
+
         if (data.status === 'success') {
             const elapsed = (Date.now() - t0) / 1000;
             document.getElementById('statTotal').textContent = data.total.toLocaleString();
@@ -306,41 +311,72 @@ async function splitFile() {
     const ta = document.getElementById('splitText');
     const chunk = parseInt(document.getElementById('chunkSize').value);
     const btn = document.getElementById('btnSplit');
-    
+    const out = document.getElementById('outputArea');
+    const bar = document.getElementById('progressBar');
+
     let text = '';
     if (fi.files.length) text = await fi.files[0].text();
     else if (ta.value.trim()) text = ta.value;
     else return alert('Pilih file atau paste text!');
-    
+
+    let zipName = (document.getElementById('splitFilename').value || '').trim() || 'split_result';
+    zipName = zipName.replace(/\.zip$/i, '').replace(/[^A-Za-z0-9_\-]/g, '');
+    if (!zipName) zipName = 'split_result';
+
     btn.disabled = true;
     btn.textContent = '⏳ Splitting...';
-    
+    out.value = '— building zip —';
+    bar.style.width = '30%';
+
     try {
         const res = await fetch('/api/split', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, chunkSize: chunk })
+            body: JSON.stringify({ text, chunkSize: chunk, filename: zipName })
         });
-        const data = await res.json();
-        if (data.status === 'success') {
-            let html = `✅ Split berhasil! ${data.total_lines} baris → ${data.total_files} file.\n\n`;
-            outputData = [];
-            data.parts.forEach(p => {
-                html += `=== PART ${p.part} ===\n${p.content}\n\n`;
-                outputData.push(p.content);
-            });
-            document.getElementById('outputArea').value = html;
-            btn.textContent = '✅ Done!';
-            setTimeout(() => { btn.disabled = false; btn.textContent = '✂️ Split Sekarang'; }, 1500);
-        } else {
-            alert('Error: ' + data.msg);
-            btn.disabled = false;
-            btn.textContent = '✂️ Split Sekarang';
+
+        bar.style.width = '80%';
+
+        if (!res.ok) {
+            let msg = 'Split failed';
+            try { const j = await res.json(); msg = j.msg || msg; } catch (_) {}
+            throw new Error(msg);
         }
+
+        const totalLines = res.headers.get('X-Total-Lines') || '?';
+        const totalFiles = res.headers.get('X-Total-Files') || '?';
+        const finalZip = res.headers.get('X-Zip-Name') || `${zipName}.zip`;
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = finalZip;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+        bar.style.width = '100%';
+        outputData = [];  // split tidak pakai download button global
+        out.value =
+            `✅ Split berhasil!\n\n` +
+            `Total baris : ${totalLines}\n` +
+            `Total file  : ${totalFiles}\n` +
+            `File ZIP    : ${finalZip}\n\n` +
+            `📦 ZIP berisi ${totalFiles} file .txt (part) dan otomatis terunduh.`;
+
+        document.getElementById('statTotal').textContent = totalFiles;
+        document.getElementById('statDup').textContent = '0';
+        document.getElementById('statSpeed').textContent = '—';
+
+        btn.textContent = '✅ Done!';
+        setTimeout(() => { btn.disabled = false; btn.textContent = '✂️ Split & Download ZIP'; }, 1500);
     } catch (e) {
-        alert('Error: ' + e.message);
+        bar.style.width = '0%';
+        out.value = '❌ ' + e.message;
         btn.disabled = false;
-        btn.textContent = '✂️ Split Sekarang';
+        btn.textContent = '✂️ Split & Download ZIP';
     }
 }
 
@@ -348,12 +384,12 @@ async function checkDuplicates() {
     const fi = document.getElementById('dupFile');
     const ta = document.getElementById('dupText');
     const res = document.getElementById('dupResult');
-    
+
     let text = '';
     if (fi.files.length) text = await fi.files[0].text();
     else if (ta.value.trim()) text = ta.value;
     else return alert('Pilih file atau paste text!');
-    
+
     try {
         const r = await fetch('/api/check-duplicates', {
             method: 'POST',
@@ -388,19 +424,16 @@ function copyOutput() {
 
 function downloadOutput() {
     if (!outputData.length) return alert('Nggak ada data!');
-    
-    // Ambil nama dari input, kalau kosong pake default
+
     let fname = document.getElementById('filenameInput').value.trim();
     if (!fname) fname = `smth_${Date.now()}`;
-    
-    // Pastiin formatnya .txt
     if (!fname.endsWith('.txt')) fname += '.txt';
-    
+
     const blob = new Blob([outputData.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = fname; // <--- Pake nama custom
+    a.download = fname;
     a.click();
     URL.revokeObjectURL(url);
 }
