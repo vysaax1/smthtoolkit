@@ -131,6 +131,7 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
             <div class="field">
                 <label>Generation Mode</label>
                 <div class="chips" id="modeChips">
+                    <div class="chip active" data-mode="gamertag">🎮 Gamertag</div>
                     <div class="chip active" data-mode="plain">Plain</div>
                     <div class="chip" data-mode="2digit">+2 Digits</div>
                     <div class="chip" data-mode="3digit">+3 Digits</div>
@@ -227,7 +228,7 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
     </div>
 </main>
 <script>
-let currentMode = 'plain';
+let currentMode = 'gamertag';
 let currentRegion = 'indonesia';
 let currentLength = 'both';
 let outputData = [];
