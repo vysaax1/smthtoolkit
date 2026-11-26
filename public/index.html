@@ -115,7 +115,7 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
         <div class="logo-mark">S</div>
         <div class="brand-text">
             <h1>SMTH Toolkit</h1>
-            <span>v2.5 · ultra random engine</span>
+            <span>v2.6 · ultra random engine</span>
         </div>
     </div>
     <div class="badge">PROPERTY OF SMTH</div>
@@ -145,6 +145,14 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
                     <div class="chip" data-region="philippines">🇵🇭 Philippines</div>
                     <div class="chip" data-region="malaysia">🇲🇾 Malaysia</div>
                     <div class="chip" data-region="singapore">🇸🇬 Singapore</div>
+                </div>
+            </div>
+            <div class="field">
+                <label>Name Length</label>
+                <div class="chips" id="lengthChips">
+                    <div class="chip active" data-len="both">Any</div>
+                    <div class="chip" data-len="short">Short (≤7)</div>
+                    <div class="chip" data-len="long">Long (≥8)</div>
                 </div>
             </div>
             <div class="field">
@@ -192,8 +200,8 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
                 <div class="stat-value cyan" id="statTotal">0</div>
             </div>
             <div class="stat">
-                <div class="stat-label">Duplicates</div>
-                <div class="stat-value amber" id="statDup">0</div>
+                <div class="stat-label">Pool Size</div>
+                <div class="stat-value amber" id="statPool">0</div>
             </div>
             <div class="stat">
                 <div class="stat-label">Speed</div>
@@ -221,6 +229,7 @@ input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px r
 <script>
 let currentMode = 'plain';
 let currentRegion = 'indonesia';
+let currentLength = 'both';
 let outputData = [];
 
 document.querySelectorAll('#modeChips .chip').forEach(c => {
@@ -237,6 +246,13 @@ document.querySelectorAll('#regionChips .chip').forEach(c => {
         currentRegion = c.dataset.region;
     });
 });
+document.querySelectorAll('#lengthChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+        document.querySelectorAll('#lengthChips .chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        currentLength = c.dataset.len;
+    });
+});
 
 function switchTab(e, tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -249,7 +265,7 @@ function switchTab(e, tab) {
 function clearLog() {
     document.getElementById('outputArea').value = '— waiting for generation —';
     document.getElementById('statTotal').textContent = '0';
-    document.getElementById('statDup').textContent = '0';
+    document.getElementById('statPool').textContent = '0';
     document.getElementById('statSpeed').textContent = '0/sec';
     document.getElementById('progressBar').style.width = '0%';
     document.getElementById('dupResult').innerHTML = '';
@@ -278,7 +294,12 @@ async function generate() {
         const res = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: currentMode, region: currentRegion, count })
+            body: JSON.stringify({
+                mode: currentMode,
+                region: currentRegion,
+                nameLength: currentLength,
+                count
+            })
         });
         const data = await res.json();
         clearInterval(iv);
@@ -287,14 +308,14 @@ async function generate() {
         if (data.status === 'success') {
             const elapsed = (Date.now() - t0) / 1000;
             document.getElementById('statTotal').textContent = data.total.toLocaleString();
-            document.getElementById('statDup').textContent = '0';
+            document.getElementById('statPool').textContent = (data.pool_size || 0).toLocaleString();
             document.getElementById('statSpeed').textContent = Math.round(data.total / elapsed) + '/sec';
             out.value = data.data.join('\n');
             outputData = data.data;
             btn.textContent = '✅ Done!';
             setTimeout(() => { btn.disabled = false; btn.textContent = '⚡ Generate UltraCombo'; }, 1500);
         } else {
-            out.value = '❌ ' + data.msg;
+            out.value = '❌ ' + (data.msg || 'Gagal generate');
             btn.disabled = false;
             btn.textContent = '⚡ Generate UltraCombo';
         }
@@ -358,7 +379,7 @@ async function splitFile() {
         setTimeout(() => URL.revokeObjectURL(url), 1500);
 
         bar.style.width = '100%';
-        outputData = [];  // split tidak pakai download button global
+        outputData = [];
         out.value =
             `✅ Split berhasil!\n\n` +
             `Total baris : ${totalLines}\n` +
@@ -367,7 +388,7 @@ async function splitFile() {
             `📦 ZIP berisi ${totalFiles} file .txt (part) dan otomatis terunduh.`;
 
         document.getElementById('statTotal').textContent = totalFiles;
-        document.getElementById('statDup').textContent = '0';
+        document.getElementById('statPool').textContent = '—';
         document.getElementById('statSpeed').textContent = '—';
 
         btn.textContent = '✅ Done!';
