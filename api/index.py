@@ -1,388 +1,676 @@
 import os
+import sys
 import io
 import zipfile
 import random
+import json
+import hashlib
+import requests
+from datetime import datetime, timezone
 from collections import Counter
 from flask import Flask, request, jsonify, send_from_directory, send_file
 
 app = Flask(__name__, static_folder='../public', static_url_path='')
 
-# ==========================================
-#               SMTH TOOLKIT V2.6
-#              PROPERTY OF SMTH
-#                  SMTH©2026
-# ==========================================
+VERSION = "3.0"
+WATERMARK = "=" * 40 + "\n               SMTH©2026\n            PROPERTY OF SMTH\n" + "=" * 40 + "\n\n"
 
-VERSION = "2.6"
+# ============================================================================
+#                     WORD POOL (TIERED, CACHED)
+# ============================================================================
 
-WATERMARK = (
-    "========================================\n"
-    "               SMTH©2026\n"
-    "            PROPERTY OF SMTH\n"
-    "========================================\n\n"
-)
+_CORE = None
+_EXT = None
+_FALLBACK_NAMES = ["Adi", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gita"]
 
-# ==========================================================
-#   WORD POOLS — nama asli per region (lowercase)
-#   Tambah/kurangi sesuai kebutuhan. Bisa juga taruh file
-#   words_database.txt di folder yang sama (satu kata per baris).
-# ==========================================================
-_RAW_POOLS = {
-    "indonesia": [
-        "adi", "agung", "agus", "ahmad", "aisyah", "aldi", "alif", "amelia",
-        "andi", "andra", "angga", "anggun", "ani", "anisa", "anwar", "ardi",
-        "ari", "arif", "aris", "arman", "asep", "ayu", "bagas", "bagus",
-        "bayu", "bella", "beni", "bima", "budi", "cahaya", "candra", "citra",
-        "damar", "dara", "dedi", "dewi", "dian", "dina", "dinda", "dodi",
-        "doni", "dwi", "eka", "eko", "endang", "erik", "erna", "fahmi",
-        "fajar", "farhan", "farida", "fauzi", "febri", "feri", "fitri",
-        "galih", "gita", "gunawan", "hadi", "hana", "haris", "hendra",
-        "hesti", "hilmi", "indah", "indra", "intan", "iqbal", "irfan",
-        "irma", "ivan", "iwan", "jaka", "jihan", "joko", "kamila",
-        "kartika", "kiki", "kurnia", "lina", "linda", "lisa", "lukman",
-        "lutfi", "maya", "mega", "miko", "mila", "mita", "nabila", "nanda",
-        "naufal", "nia", "nisa", "novi", "nurul", "pandu", "putra", "putri",
-        "rafi", "rahmat", "raihan", "raka", "rama", "rani", "ratna", "rendi",
-        "reza", "rifki", "rina", "rizki", "roni", "rosita", "rudi", "saiful",
-        "salsabila", "sandi", "santoso", "sari", "satria", "sinta", "siti",
-        "sofia", "sri", "sugeng", "sukma", "surya", "syifa", "tania",
-        "taufik", "teguh", "tiara", "tika", "tri", "wahyu", "wati", "wendi",
-        "widya", "wijaya", "wulan", "yani", "yanto", "yasin", "yoga",
-        "yudi", "yuliana", "yusuf", "zahra", "zaki", "zainal", "zulfa",
-    ],
-    "philippines": [
-        "andrea", "angela", "angelo", "anna", "anthony", "bea", "ben",
-        "bianca", "carlo", "carmela", "celine", "charles", "cheryl", "chris",
-        "christian", "christine", "clarisse", "daniel", "david", "dennis",
-        "diana", "diane", "dominic", "donna", "edgar", "eduardo", "ella",
-        "emilio", "emmanuel", "eric", "erica", "faith", "fernando", "francis",
-        "gabriel", "gemma", "grace", "hannah", "hazel", "heart", "ian",
-        "isabel", "ivan", "james", "janine", "jasmine", "jay", "jayson",
-        "jenny", "jerome", "jessa", "jessica", "jhon", "joel", "john",
-        "jomar", "jose", "joseph", "joshua", "joy", "juan", "julia",
-        "karen", "karla", "kate", "kevin", "kim", "kristine", "kurt",
-        "kyle", "lara", "larry", "lawrence", "leah", "leo", "liza",
-        "lorenz", "louise", "lucas", "mae", "marco", "maria", "marie",
-        "mark", "marlon", "mary", "michael", "michelle", "miguel", "mika",
-        "nancy", "natalie", "nicole", "nikki", "noel", "paolo", "patricia",
-        "paul", "paula", "peter", "princess", "rachel", "rafael", "ralph",
-        "ramon", "renz", "rex", "rica", "richard", "robert", "rodel",
-        "roger", "rose", "rowena", "ryan", "sam", "sarah", "shane",
-        "sophia", "stephanie", "trisha", "vanessa", "vince", "vincent",
-        "yna", "zara",
-    ],
-    "malaysia": [
-        "ahmad", "aidil", "aiman", "aina", "aisyah", "akmal", "alia",
-        "amalina", "amir", "amira", "anis", "anisah", "anwar", "aqil",
-        "aqilah", "arif", "ariff", "azlan", "azman", "azmi", "bakar",
-        "balqis", "danial", "danish", "dhabitah", "faiz", "faizal", "farah",
-        "farid", "faris", "fatimah", "fatin", "hafiz", "hakim", "hakimi",
-        "halim", "hamzah", "hana", "hanis", "haris", "hassan", "hazim",
-        "hazwan", "hidayah", "huda", "ilyas", "iman", "imran", "irfan",
-        "iskandar", "ismail", "izzati", "johari", "kamal", "kamarul",
-        "kartini", "khairul", "laila", "latifah", "liyana", "luqman",
-        "mahathir", "maisarah", "maisara", "malik", "mazlan", "megat",
-        "mohd", "murni", "nabila", "nadia", "naim", "nazira", "nazmi",
-        "nik", "noor", "nora", "nur", "nuraina", "omar", "osman",
-        "qistina", "rafiq", "rahim", "rahman", "raihana", "ramli", "rashid",
-        "razak", "ridzuan", "rizal", "roslan", "rosli", "sabrina",
-        "saiful", "salleh", "samad", "sarah", "shafiq", "shah", "shukri",
-        "sofea", "sulaiman", "syafiq", "syahmi", "syazwan", "tan", "tengku",
-        "wan", "yaakob", "yasmin", "yusof", "zahid", "zaidi", "zainal",
-        "zakaria", "zarith", "zikri", "zul", "zulaikha", "zulkifli",
-    ],
-    "singapore": [
-        "aaron", "adeline", "aisyah", "alex", "alvin", "amanda", "amber",
-        "andrew", "angela", "arjun", "ben", "benjamin", "brandon", "bryan",
-        "charmaine", "cheryl", "chloe", "chris", "christina", "chua",
-        "claire", "darren", "david", "deepa", "denise", "derek", "devi",
-        "diana", "edwin", "elaine", "eric", "eugene", "faizal", "fiona",
-        "foo", "gabriel", "gerald", "goh", "gopal", "grace", "hafiz",
-        "hakim", "hazel", "hui", "ismail", "ivan", "james", "jasmine",
-        "jaya", "jie", "joel", "jonathan", "jovan", "jun", "justin",
-        "karen", "kavitha", "kelvin", "kenneth", "kevin", "kimberly",
-        "koh", "krishna", "kumar", "lakshmi", "larry", "latha", "lee",
-        "leonard", "lex", "lim", "ling", "lionel", "marcus", "mei",
-        "melissa", "ming", "mohan", "nair", "nancy", "natalie", "ng",
-        "nigel", "nisha", "ong", "pillai", "priya", "rachel", "raj",
-        "ramesh", "ravi", "rebecca", "ryan", "samuel", "sarah", "sean",
-        "sen", "sheryl", "siva", "sophia", "stephanie", "suresh", "surya",
-        "tan", "tay", "teo", "timothy", "vanessa", "vijay", "vincent",
-        "vivian", "wei", "wong", "xin", "yan", "yeo", "yi", "zhi", "zoe",
-    ],
-}
-
-
-def _clean_word(w):
-    """Buang karakter non-alnum non-ascii, lowercase."""
-    w = ''.join(ch for ch in str(w).strip() if ch.isalnum() and ch.isascii())
-    return w.lower()
-
-
-def _dedup(seq):
-    seen, out = set(), []
-    for w in seq:
-        cw = _clean_word(w)
-        if cw and cw not in seen:
-            seen.add(cw)
-            out.append(cw)
-    return out
-
-
-WORD_POOLS = {k: _dedup(v) for k, v in _RAW_POOLS.items()}
-WORD_POOLS["global"] = _dedup([w for v in _RAW_POOLS.values() for w in v])
-
-# ==========================================================
-#   External database (opsional): words_database.txt
-#   Di-cache berbasis mtime — tidak dibaca ulang tiap request.
-# ==========================================================
-_EXTERNAL_CACHE = {"mtime": None, "words": []}
-
-
-def load_external_words():
-    db_path = os.path.join(os.path.dirname(__file__), "words_database.txt")
-    if not os.path.exists(db_path):
+def _load(path):
+    if not os.path.exists(path):
         return []
-    try:
-        mtime = os.path.getmtime(db_path)
-    except OSError:
-        return []
-    if _EXTERNAL_CACHE["mtime"] == mtime:
-        return _EXTERNAL_CACHE["words"]
-    try:
-        words = []
-        with open(db_path, "r", encoding="utf-8", errors="ignore") as f:
-            for line in f:
-                words.append(line)
-        cleaned = _dedup(words)
-        _EXTERNAL_CACHE["mtime"] = mtime
-        _EXTERNAL_CACHE["words"] = cleaned
-        return cleaned
-    except Exception:
-        return []
+    with open(path, "r", encoding="utf-8") as f:
+        return [ln.strip() for ln in f if ln.strip()]
 
+def get_core():
+    global _CORE
+    if _CORE is None:
+        path = os.path.join(os.path.dirname(__file__), "words_core.json")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                _CORE = json.load(f)
+        except Exception:
+            _CORE = {"names": _FALLBACK_NAMES, "adjectives": [], "nouns": [],
+                     "slang_prefix": [], "slang_core": [], "anime": [],
+                     "short": [], "region_suffix": {}}
+    return _CORE
 
-def get_word_pool(region):
-    region = (region or "indonesia").lower()
-    base = WORD_POOLS.get(region) or WORD_POOLS["global"]
-    return _dedup(list(base) + load_external_words())
+def get_extended():
+    global _EXT
+    if _EXT is None:
+        path = os.path.join(os.path.dirname(__file__), "words_extended.txt")
+        _EXT = _load(path) or None
+    return _EXT
 
+# ============================================================================
+#                     GAMERTAG ARCHETYPE ENGINE
+# ============================================================================
 
-# mode -> (max_digits, digit_span, digit_base)
-DIGIT_INFO = {
-    "plain":  (0, 1,   0),
-    "2digit": (2, 90,  10),
-    "3digit": (3, 900, 100),
-    "4digit": (4, 9000, 1000),
-    "mix":    (4, 9991, None),   # 1 + 90 + 900 + 9000
-}
+BIRTH_YEARS_2D = [str(y)[-2:] for y in range(1985, 2012)]
+TRYHARD_BASE = ["ProSweat", "CarryMe", "TryHard", "NoobMaster", "Sweaty",
+                "AimGod", "Doge", "Chad", "Sigma", "Gamer", "Pro", "Epic"]
+TRYHARD_TAGS = ["_YT", "_TT", "_OP", "_69", "_420", "_007", "_Pro",
+                "_God", "_King", "X", "99", "21"]
 
+LEET = {'a':'4','e':'3','i':'1','o':'0','s':'5','t':'7','g':'9'}
 
-def capacity_of(mode, pool_size):
-    if mode not in DIGIT_INFO:
-        return pool_size
-    return pool_size * DIGIT_INFO[mode][1]
+def leetify(w):
+    return ''.join(LEET.get(c.lower(), c) if c.isalpha() else c for c in w)
 
+def vary_case(w):
+    r = random.random()
+    if r < 0.35: return w.capitalize()
+    if r < 0.55: return w.lower()
+    if r < 0.72: return w.upper()
+    if r < 0.85: return w[:1].lower() + w[1:]
+    return w
 
-def prepare_pool(pool, mode, name_length, min_len, max_len):
-    """Filter pool supaya semua kombinasi (word + digit) pas di [min_len, max_len]."""
-    # filter name length dulu
-    if name_length == "short":
-        pool = [w for w in pool if len(w) <= 7]
-    elif name_length == "long":
-        pool = [w for w in pool if len(w) >= 8]
+ARCHETYPES = [
+    ("name_year", 25), ("compound", 20), ("edgy", 12),
+    ("tryhard", 10), ("slang", 10), ("aesthetic", 8),
+    ("leet", 5), ("weeb", 5), ("numberish", 3), ("extended", 2),
+]
 
-    if mode == "plain":
-        lo, hi = min_len, max_len
-    elif mode in ("2digit", "3digit", "4digit"):
-        d = DIGIT_INFO[mode][0]
-        lo, hi = max(3, min_len - d), max_len - d
-    elif mode == "mix":
-        lo, hi = max(3, min_len), max_len - 4
-    else:
-        lo, hi = min_len, max_len
+def gen_gamertag(region="indonesia"):
+    cats = get_core()
+    suffixes = cats.get("region_suffix", {}).get(region, [""])
+    names  = cats.get("names") or _FALLBACK_NAMES
+    adjs   = cats.get("adjectives") or []
+    nouns  = cats.get("nouns") or []
+    slang_p = cats.get("slang_prefix") or [""]
+    slang_c = cats.get("slang_core") or []
+    anime  = cats.get("anime") or []
+    shorts = cats.get("short") or []
 
-    if hi < lo:
-        return []
-    return [w for w in pool if lo <= len(w) <= hi]
+    for _ in range(60):
+        arch = random.choices([a[0] for a in ARCHETYPES],
+                              weights=[a[1] for a in ARCHETYPES])[0]
+        u = None
+        try:
+            if arch == "name_year":
+                u = random.choice(names) + random.choice(BIRTH_YEARS_2D)
+            elif arch == "compound":
+                u = random.choice(adjs) + random.choice(nouns)
+                if random.random() < 0.20:
+                    u += random.choice(BIRTH_YEARS_2D)
+            elif arch == "edgy":
+                core = random.choice(nouns + adjs)
+                u = random.choice([f"xX_{core}_Xx", f"_{core}_",
+                                   f"-{core}-", f"xX{core}Xx"])
+            elif arch == "tryhard":
+                u = random.choice(TRYHARD_BASE) + random.choice(TRYHARD_TAGS)
+            elif arch == "slang" and region == "indonesia" and slang_c:
+                u = random.choice(slang_p + [""]) + random.choice(slang_c)
+            elif arch == "aesthetic" and shorts:
+                w = random.choice(shorts)
+                u = random.choice(["_", "-", ""]) + w + \
+                    random.choice(["_", "", "77", "99"])
+            elif arch == "leet" and adjs and nouns:
+                u = leetify(random.choice(adjs) + random.choice(nouns))
+            elif arch == "weeb" and anime:
+                w = random.choice(anime)
+                u = random.choice(["_", "-", ""]) + w + \
+                    random.choice(["_", "99", "07", "-kun"])
+            elif arch == "numberish" and shorts:
+                u = random.choice(["404", "007", "88", "99", "123"]) + \
+                    random.choice(shorts)
+            elif arch == "extended":
+                ext = get_extended()
+                if ext:
+                    u = random.choice(ext).capitalize()
+                    if random.random() < 0.4:
+                        u += random.choice(BIRTH_YEARS_2D)
+                else:
+                    u = random.choice(adjs or names) + random.choice(suffixes)
+        except (IndexError, KeyError):
+            continue
 
+        if not u:
+            continue
+        u = vary_case(u)
+        if 6 <= len(u) <= 20 and u.isascii():
+            return u
 
-def generate_combos(pool, mode, count, min_len, max_len):
-    """Sampling unik O(count) — tanpa retry loop, tanpa duplikat."""
-    rng = random.SystemRandom()
-    pool_size = len(pool)
-    if pool_size == 0 or count <= 0:
-        return []
+    return "Player" + str(random.randint(10000, 99999))
 
-    if mode == "plain":
-        count = min(count, pool_size)
-        picked = rng.sample(pool, count)
-        return [f"{w}:{w}" for w in picked]
+# ============================================================================
+#                     COMBO MODE (legacy)
+# ============================================================================
 
-    if mode in ("2digit", "3digit", "4digit"):
-        d, span, base = DIGIT_INFO[mode]
-        cap = pool_size * span
-        count = min(count, cap)
-        idxs = rng.sample(range(cap), count)
-        out = []
-        for i in idxs:
-            w = pool[i // span]
-            num = base + (i % span)
-            uname = f"{w}{num}"
-            if min_len <= len(uname) <= max_len:
-                out.append(f"{uname}:{uname}")
-        return out
-
+def gen_combo(mode, region, pool):
+    base = random.choice(pool).capitalize()
+    if mode == "plain":    return base
+    if mode == "2digit":   return f"{base}{random.randint(10, 99)}"
+    if mode == "3digit":   return f"{base}{random.randint(100, 999)}"
+    if mode == "4digit":   return f"{base}{random.randint(1000, 9999)}"
     if mode == "mix":
-        SUB = 9991
-        cap = pool_size * SUB
-        count = min(count, cap)
-        idxs = rng.sample(range(cap), count)
-        out = []
-        for i in idxs:
-            w = pool[i // SUB]
-            sub = i % SUB
-            # sub=0 -> plain; sub=1..90 -> 10..99; 91..990 -> 100..999; 991..9990 -> 1000..9999
-            uname = w if sub == 0 else f"{w}{sub + 9}"
-            if min_len <= len(uname) <= max_len:
-                out.append(f"{uname}:{uname}")
-        return out
+        return gen_combo(random.choice(["plain", "2digit", "3digit", "4digit"]),
+                         region, pool)
+    return base
 
-    return [f"{w}:{w}" for w in pool[:count]]
+def generate_usernames(mode, region, count):
+    """mode: 'gamertag' | 'plain' | '2digit' | '3digit' | '4digit' | 'mix'"""
+    out = set()
+    max_attempts = count * 25
+    attempts = 0
 
+    if mode == "gamertag":
+        while len(out) < count and attempts < max_attempts:
+            attempts += 1
+            u = gen_gamertag(region)
+            if 6 <= len(u) <= 20:
+                out.add(u)
+    else:
+        pool = get_extended() or get_core().get("names") or _FALLBACK_NAMES
+        pool = [w for w in pool if 3 <= len(w) <= 15]
+        while len(out) < count and attempts < max_attempts:
+            attempts += 1
+            u = gen_combo(mode, region, pool)
+            if 6 <= len(u) <= 20:
+                out.add(u)
 
-# ── ENDPOINT: GENERATE ──
+    result = list(out)
+    random.shuffle(result)
+    return result
+
+# ============================================================================
+#                     HTTP API (existing + updated)
+# ============================================================================
+
 @app.route('/api/generate', methods=['POST'])
-def generate():
+def api_generate():
     try:
-        data = request.get_json(silent=True) or {}
-        mode = (data.get('mode') or 'plain').lower()
-        region = (data.get('region') or 'indonesia').lower()
-        name_length = (data.get('nameLength') or 'both').lower()
-        count = int(data.get('count', 10))
-        min_len = int(data.get('minLength', 3))
-        max_len = int(data.get('maxLength', 20))
+        data = request.json or {}
+        mode     = data.get('mode', 'gamertag')
+        region   = data.get('region', 'indonesia')
+        count    = int(data.get('count', 10))
+        if count <= 0 or count > 50000:
+            return jsonify({"status": "error", "msg": "Jumlah harus 1-50000"})
 
-        if mode not in DIGIT_INFO:
-            return jsonify({"status": "error", "msg": f"Mode tidak dikenal: {mode}"})
-        if count < 1 or count > 15000:
-            return jsonify({"status": "error", "msg": "Jumlah harus 1-15000"})
-        if min_len < 3:
-            min_len = 3
-        if max_len > 24:
-            max_len = 24
-        if min_len > max_len:
-            min_len, max_len = max_len, min_len
-
-        raw_pool = get_word_pool(region)
-        pool = prepare_pool(raw_pool, mode, name_length, min_len, max_len)
-
-        if not pool:
-            return jsonify({
-                "status": "error",
-                "msg": (f"Pool kata kosong untuk region '{region}' mode '{mode}' "
-                        f"dengan filter name length '{name_length}'. "
-                        f"Coba region lain, mode lain, atau longgarkan filter.")
-            })
-
-        cap = capacity_of(mode, len(pool))
-        if count > cap:
-            return jsonify({
-                "status": "error",
-                "msg": (f"Mode '{mode}' untuk region '{region}' hanya sanggup "
-                        f"{cap:,} combo unik (pool {len(pool)} kata). "
-                        f"Kurangi count atau gunakan mode dengan digit lebih banyak.")
-            })
-
-        result = generate_combos(pool, mode, count, min_len, max_len)
-        random.shuffle(result)
+        usernames = generate_usernames(mode, region, count)
+        warning = None
+        if len(usernames) < count:
+            warning = (f"Kapasitas pool terbatas, hanya menghasilkan "
+                       f"{len(usernames)}/{count} unik.")
 
         return jsonify({
             "status": "success",
-            "total": len(result),
-            "pool_size": len(pool),
-            "capacity": cap,
-            "mode": mode,
-            "region": region,
-            "data": result,
+            "total": len(usernames),
+            "requested": count,
+            "warning": warning,
+            "data": usernames,
         })
-
     except Exception as e:
         return jsonify({"status": "error", "msg": str(e)})
 
-
-# ── ENDPOINT: DUPLICATE CHECKER ──
 @app.route('/api/check-duplicates', methods=['POST'])
-def check_duplicates():
+def api_check_duplicates():
     try:
-        data = request.json
-        text_content = data.get('text', '')
-        lines = [line.strip() for line in text_content.splitlines() if line.strip()]
-
+        text = (request.json or {}).get('text', '')
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         counts = Counter(lines)
-        duplicates = {item: count for item, count in counts.items() if count > 1}
-        total_duplicate_entries = sum(count - 1 for count in duplicates.values())
-
+        dupes = {k: v for k, v in counts.items() if v > 1}
         return jsonify({
             "status": "success",
             "total_lines": len(lines),
             "unique": len(counts),
-            "dupes": len(duplicates),
-            "extra": total_duplicate_entries,
-            "duplicate_list": [{"item": k, "count": v} for k, v in duplicates.items()],
+            "dupes": len(dupes),
+            "extra": sum(v - 1 for v in dupes.values()),
+            "duplicate_list": [{"item": k, "count": v} for k, v in dupes.items()],
         })
     except Exception as e:
         return jsonify({"status": "error", "msg": str(e)})
 
-
-# ── ENDPOINT: SPLIT FILE → ZIP ──
 @app.route('/api/split', methods=['POST'])
-def split_file():
+def api_split():
     try:
-        data = request.json
-        text_content = data.get('text', '')
+        data = request.json or {}
+        text = data.get('text', '')
         chunk_size = int(data.get('chunkSize', 100))
         base_name = (data.get('filename') or 'split_result').strip()
-
         if chunk_size <= 0:
-            return jsonify({"status": "error", "msg": "Chunk size harus > 0"})
+            return jsonify({"status": "error", "msg": "Chunk size > 0"})
 
-        lines = text_content.splitlines(keepends=True)
+        lines = text.splitlines(keepends=True)
         if not lines:
             return jsonify({"status": "error", "msg": "File kosong!"})
 
         total_parts = (len(lines) + chunk_size - 1) // chunk_size
-
-        safe_name = "".join(c for c in base_name if c.isalnum() or c in "-_") or "split_result"
+        safe_name = "".join(c for c in base_name if c.isalnum() or c in "-_") \
+                    or "split_result"
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
             pad = max(3, len(str(total_parts)))
-            for index in range(total_parts):
-                start = index * chunk_size
-                end = start + chunk_size
-                chunk = lines[start:end]
-                part_name = f"{safe_name}_part_{index + 1:0{pad}d}.txt"
-                zf.writestr(part_name, WATERMARK + "".join(chunk))
+            for i in range(total_parts):
+                chunk = lines[i * chunk_size:(i + 1) * chunk_size]
+                name = f"{safe_name}_part_{i + 1:0{pad}d}.txt"
+                zf.writestr(name, WATERMARK + "".join(chunk))
         buf.seek(0)
 
-        resp = send_file(
-            buf, mimetype='application/zip', as_attachment=True,
-            download_name=f"{safe_name}.zip"
-        )
+        resp = send_file(buf, mimetype='application/zip', as_attachment=True,
+                         download_name=f"{safe_name}.zip")
         resp.headers['X-Total-Lines'] = str(len(lines))
         resp.headers['X-Total-Files'] = str(total_parts)
-        resp.headers['X-Zip-Name'] = f"{safe_name}.zip"
+        resp.headers['X-Zip-Name']    = f"{safe_name}.zip"
         return resp
-
     except Exception as e:
         return jsonify({"status": "error", "msg": str(e)})
-
 
 @app.route('/')
 def index():
     return send_from_directory('../public', 'index.html')
 
+# ============================================================================
+#                     TELEGRAM BOT — WEBHOOK
+# ============================================================================
 
-# Vercel Python runtime otomatis mendeteksi variabel `app` (Flask WSGI).
-# Tidak perlu handler() manual lagi.
+TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TG_SECRET = os.environ.get("TELEGRAM_WEBHOOK_SECRET", "smth-webhook-secret")
+TG_API = f"https://api.telegram.org/bot{TG_TOKEN}"
+
+# pending state in-memory (TTL 10 menit)
+_PENDING = {}
+
+def _clean_pending():
+    now = datetime.now(timezone.utc).timestamp()
+    for k in list(_PENDING):
+        if now - _PENDING[k].get("ts", 0) > 600:
+            _PENDING.pop(k, None)
+
+def tg_call(method, **kwargs):
+    if not TG_TOKEN:
+        return {"ok": False, "error": "no token"}
+    try:
+        r = requests.post(f"{TG_API}/{method}", json=kwargs, timeout=15)
+        return r.json()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def tg_send(chat_id, text, markup=None, html=False):
+    kw = {"chat_id": chat_id, "text": text,
+          "parse_mode": "HTML" if html else None,
+          "disable_web_page_preview": True}
+    if markup: kw["reply_markup"] = markup
+    return tg_call("sendMessage", **kw)
+
+def tg_edit(chat_id, msg_id, text, markup=None, html=False):
+    kw = {"chat_id": chat_id, "message_id": msg_id, "text": text,
+          "parse_mode": "HTML" if html else None}
+    if markup: kw["reply_markup"] = markup
+    return tg_call("editMessageText", **kw)
+
+def tg_answer_cb(cb_id, text=None):
+    kw = {"callback_query_id": cb_id}
+    if text: kw["text"] = text
+    return tg_call("answerCallbackQuery", **kw)
+
+def tg_send_doc(chat_id, filename, content, caption=None):
+    files = {"document": (filename, content, "text/plain")}
+    data = {"chat_id": chat_id}
+    if caption: data["caption"] = caption
+    try:
+        r = requests.post(f"{TG_API}/sendDocument", files=files,
+                          data=data, timeout=30)
+        return r.json()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def kb(rows):
+    return {"inline_keyboard": rows}
+
+# ── menu builders ──
+
+def kb_main():
+    return kb([
+        [{"text": "⚡ Generate",      "callback_data": "menu:gen"},
+         {"text": "🔍 Check Dupes",   "callback_data": "menu:dup"}],
+        [{"text": "✂️ Split File",    "callback_data": "menu:split"},
+         {"text": "ℹ️ Help",          "callback_data": "menu:help"}],
+    ])
+
+def kb_modes():
+    return kb([
+        [{"text": "🎮 Gamertag", "callback_data": "g:gamertag"}],
+        [{"text": "Plain", "callback_data": "g:plain"},
+         {"text": "+2",    "callback_data": "g:2digit"},
+         {"text": "+3",    "callback_data": "g:3digit"},
+         {"text": "+4",    "callback_data": "g:4digit"},
+         {"text": "Mix",   "callback_data": "g:mix"}],
+        [{"text": "⬅️ Menu", "callback_data": "menu:main"}],
+    ])
+
+def kb_regions(mode):
+    return kb([
+        [{"text": "🇮🇩 ID", "callback_data": f"r:{mode}:indonesia"},
+         {"text": "🇵🇭 PH", "callback_data": f"r:{mode}:philippines"},
+         {"text": "🇲🇾 MY", "callback_data": f"r:{mode}:malaysia"},
+         {"text": "🇸🇬 SG", "callback_data": f"r:{mode}:singapore"}],
+        [{"text": "⬅️ Mode", "callback_data": "menu:gen"}],
+    ])
+
+def kb_counts(mode, region):
+    row = []
+    for n in (50, 100, 500, 1000, 5000):
+        row.append({"text": str(n), "callback_data": f"c:{mode}:{region}:{n}"})
+    return kb([
+        row[:3],
+        row[3:],
+        [{"text": "⬅️ Region", "callback_data": f"g:{mode}"}],
+    ])
+
+def kb_chunk(key):
+    return kb([
+        [{"text": "50",   "callback_data": f"s:{key}:50"},
+         {"text": "100",  "callback_data": f"s:{key}:100"},
+         {"text": "500",  "callback_data": f"s:{key}:500"},
+         {"text": "1000", "callback_data": f"s:{key}:1000"}],
+        [{"text": "❌ Cancel", "callback_data": "menu:main"}],
+    ])
+
+# ── command handlers ──
+
+def handle_start(chat_id, user):
+    name = user.get("first_name", "Player")
+    text = (f"<b>👋 Halo, {name}!</b>\n\n"
+            f"<b>SMTH Toolkit v{VERSION}</b>\n"
+            f"Gamertag & combo generator + tools.\n\n"
+            f"Pilih menu:")
+    tg_send(chat_id, text, kb_main(), html=True)
+
+def handle_help(chat_id):
+    text = (
+        "<b>📖 Cara Pakai</b>\n\n"
+        "<b>⚡ Generate</b>\n"
+        "1. Tap <b>Generate</b>\n"
+        "2. Pilih mode (Gamertag/Combo)\n"
+        "3. Pilih region\n"
+        "4. Pilih jumlah\n"
+        "5. Bot kirim file .txt\n\n"
+        "<b>🔍 Check Dupes</b>\n"
+        "Kirim file .txt atau paste text berisi list.\n\n"
+        "<b>✂️ Split File</b>\n"
+        "Kirim file .txt, lalu pilih ukuran per file.\n"
+        "Bot kirim balik ZIP.\n\n"
+        "<b>Commands</b>\n"
+        "/start — menu utama\n"
+        "/generate — mulai generate\n"
+        "/checkdup — cek duplikat\n"
+        "/split — split file\n"
+        "/help — pesan ini"
+    )
+    tg_send(chat_id, text, kb_main(), html=True)
+
+def handle_generate_flow(chat_id, msg_id=None):
+    text = "<b>⚡ Generate</b>\n\nPilih <b>mode</b>:"
+    if msg_id:
+        tg_edit(chat_id, msg_id, text, kb_modes(), html=True)
+    else:
+        tg_send(chat_id, text, kb_modes(), html=True)
+
+def do_generate(chat_id, mode, region, count):
+    tg_send(chat_id, f"⏳ Generating {count} usernames...")
+    start = datetime.now().timestamp()
+    users = generate_usernames(mode, region, count)
+    dur = datetime.now().timestamp() - start
+
+    if not users:
+        tg_send(chat_id, "❌ Gagal generate. Coba jumlah lebih kecil.")
+        return
+
+    content = "\n".join(users).encode("utf-8")
+    fname = f"smth_{mode}_{region}_{len(users)}.txt"
+    caption = (f"✅ <b>{len(users)}</b> usernames ({mode}/{region}) "
+               f"dalam {dur:.1f}s")
+    tg_send_doc(chat_id, fname, content, caption=caption)
+    tg_send(chat_id, "Mau generate lagi?",
+            kb([[
+                {"text": "🔁 Lagi",  "callback_data": f"c:{mode}:{region}:{count}"},
+                {"text": "🏠 Menu",  "callback_data": "menu:main"},
+            ]]), html=True)
+
+def handle_dup_start(chat_id):
+    _PENDING[chat_id] = {"action": "dup_wait", "ts": datetime.now(timezone.utc).timestamp()}
+    tg_send(chat_id,
+            "<b>🔍 Check Dupes</b>\n\n"
+            "Kirim file <b>.txt</b> atau <b>paste text</b> "
+            "(satu entri per baris).",
+            kb([[{"text": "⬅️ Batal", "callback_data": "menu:main"}]]),
+            html=True)
+
+def process_dup(chat_id, text):
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        tg_send(chat_id, "❌ Text kosong.")
+        return
+    counts = Counter(lines)
+    dupes = {k: v for k, v in counts.items() if v > 1}
+    extra = sum(v - 1 for v in dupes.values())
+    msg = (f"<b>🔍 Hasil Cek Duplikat</b>\n\n"
+           f"Total baris: <b>{len(lines)}</b>\n"
+           f"Unik: <b>{len(counts)}</b>\n"
+           f"Duplikat: <b>{len(dupes)}</b>\n"
+           f"Extra entries: <b>{extra}</b>")
+    if dupes:
+        msg += "\n\n<b>Top duplikat:</b>\n"
+        for k, v in sorted(dupes.items(), key=lambda x: -x[1])[:10]:
+            esc = k.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            msg += f"• <code>{esc}</code> — {v}x\n"
+    tg_send(chat_id, msg, kb([[{"text": "🏠 Menu", "callback_data": "menu:main"}]]),
+            html=True)
+
+def handle_split_start(chat_id):
+    _PENDING[chat_id] = {"action": "split_wait", "ts": datetime.now(timezone.utc).timestamp()}
+    tg_send(chat_id,
+            "<b>✂️ Split File</b>\n\n"
+            "Kirim file <b>.txt</b> yang mau di-split.",
+            kb([[{"text": "⬅️ Batal", "callback_data": "menu:main"}]]),
+            html=True)
+
+def process_split_file(chat_id, file_id, filename):
+    key = hashlib.md5(file_id.encode()).hexdigest()[:8]
+    _PENDING[chat_id] = {"action": "split_chunk", "file_id": file_id,
+                         "filename": filename, "key": key,
+                         "ts": datetime.now(timezone.utc).timestamp()}
+    tg_send(chat_id,
+            f"📄 <b>{filename}</b>\n\nPilih <b>baris per file</b>:",
+            kb_chunk(key), html=True)
+
+def do_split(chat_id, file_id, base_name, chunk_size):
+    tg_send(chat_id, "⏳ Downloading file...")
+    # get file path from telegram
+    r = tg_call("getFile", file_id=file_id)
+    if not r.get("ok"):
+        tg_send(chat_id, "❌ Gagal ambil file.")
+        return
+    file_path = r["result"]["file_path"]
+    file_url = f"https://api.telegram.org/file/bot{TG_TOKEN}/{file_path}"
+    try:
+        content = requests.get(file_url, timeout=30).text
+    except Exception as e:
+        tg_send(chat_id, f"❌ Gagal download: {e}")
+        return
+
+    lines = content.splitlines(keepends=True)
+    if not lines:
+        tg_send(chat_id, "❌ File kosong.")
+        return
+
+    total = (len(lines) + chunk_size - 1) // chunk_size
+    safe = "".join(c for c in base_name if c.isalnum() or c in "-_") or "split"
+    safe = safe.replace(".txt", "")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        pad = max(3, len(str(total)))
+        for i in range(total):
+            chunk = lines[i * chunk_size:(i + 1) * chunk_size]
+            name = f"{safe}_part_{i + 1:0{pad}d}.txt"
+            zf.writestr(name, WATERMARK + "".join(chunk))
+    buf.seek(0)
+
+    files = {"document": (f"{safe}.zip", buf.read(), "application/zip")}
+    data = {"chat_id": chat_id,
+            "caption": f"✅ {len(lines)} baris → {total} file"}
+    try:
+        requests.post(f"{TG_API}/sendDocument", files=files, data=data, timeout=60)
+        tg_send(chat_id, "Mau split lagi?",
+                kb([[{"text": "🏠 Menu", "callback_data": "menu:main"}]]))
+    except Exception as e:
+        tg_send(chat_id, f"❌ Gagal kirim ZIP: {e}")
+
+# ── main dispatcher ──
+
+def process_update(update):
+    _clean_pending()
+
+    # callback query (tombol)
+    if "callback_query" in update:
+        cb = update["callback_query"]
+        chat_id = cb["message"]["chat"]["id"]
+        msg_id = cb["message"]["message_id"]
+        data = cb.get("data", "")
+        tg_answer_cb(cb["id"])
+
+        if data == "menu:main":
+            tg_edit(chat_id, msg_id, "<b>SMTH Toolkit</b>\nPilih menu:", kb_main(), html=True)
+            return
+        if data == "menu:help":
+            handle_help(chat_id)
+            return
+        if data == "menu:gen":
+            handle_generate_flow(chat_id, msg_id)
+            return
+        if data == "menu:dup":
+            handle_dup_start(chat_id)
+            return
+        if data == "menu:split":
+            handle_split_start(chat_id)
+            return
+
+        # g:<mode> → region menu
+        if data.startswith("g:"):
+            mode = data[2:]
+            tg_edit(chat_id, msg_id, f"<b>Mode: {mode}</b>\n\nPilih <b>region</b>:",
+                    kb_regions(mode), html=True)
+            return
+
+        # r:<mode>:<region> → count menu
+        if data.startswith("r:"):
+            _, mode, region = data.split(":")
+            tg_edit(chat_id, msg_id,
+                    f"<b>{mode} / {region}</b>\n\nPilih <b>jumlah</b>:",
+                    kb_counts(mode, region), html=True)
+            return
+
+        # c:<mode>:<region>:<count> → generate
+        if data.startswith("c:"):
+            _, mode, region, cnt = data.split(":")
+            tg_edit(chat_id, msg_id, "⏳ Working...")
+            do_generate(chat_id, mode, region, int(cnt))
+            return
+
+        # s:<key>:<chunk> → split
+        if data.startswith("s:"):
+            _, key, chunk = data.split(":")
+            pending = _PENDING.get(chat_id)
+            if not pending or pending.get("key") != key:
+                tg_send(chat_id, "⚠️ Sesi expired. Kirim ulang file .txt.")
+                return
+            do_split(chat_id, pending["file_id"], pending["filename"], int(chunk))
+            _PENDING.pop(chat_id, None)
+            return
+        return
+
+    # message
+    msg = update.get("message")
+    if not msg:
+        return
+    chat_id = msg["chat"]["id"]
+    user = msg.get("from", {})
+    text = msg.get("text", "")
+    doc = msg.get("document")
+
+    if text.startswith("/start"):
+        handle_start(chat_id, user); return
+    if text.startswith("/help"):
+        handle_help(chat_id); return
+    if text.startswith("/generate"):
+        handle_generate_flow(chat_id); return
+    if text.startswith("/checkdup"):
+        handle_dup_start(chat_id); return
+    if text.startswith("/split"):
+        handle_split_start(chat_id); return
+
+    # document upload
+    if doc:
+        fname = doc.get("file_name", "file.txt")
+        if not fname.lower().endswith(".txt"):
+            tg_send(chat_id, "⚠️ Hanya file .txt yang didukung.")
+            return
+        pending = _PENDING.get(chat_id, {})
+        action = pending.get("action")
+        if action == "split_wait":
+            process_split_file(chat_id, doc["file_id"], fname)
+        elif action == "dup_wait":
+            # download & process
+            r = tg_call("getFile", file_id=doc["file_id"])
+            if r.get("ok"):
+                url = f"https://api.telegram.org/file/bot{TG_TOKEN}/{r['result']['file_path']}"
+                try:
+                    content = requests.get(url, timeout=30).text
+                    _PENDING.pop(chat_id, None)
+                    process_dup(chat_id, content)
+                except Exception as e:
+                    tg_send(chat_id, f"❌ {e}")
+        else:
+            tg_send(chat_id, "Pilih menu dulu ya. /start")
+        return
+
+    # plain text (potential dup check)
+    pending = _PENDING.get(chat_id, {})
+    if pending.get("action") == "dup_wait" and text:
+        _PENDING.pop(chat_id, None)
+        process_dup(chat_id, text)
+        return
+
+    # default
+    tg_send(chat_id, "Ketik /start untuk menu.", kb_main())
+
+
+@app.route(f'/api/telegram/{TG_SECRET}', methods=['POST'])
+def telegram_webhook(TG_SECRET):
+    if not TG_TOKEN:
+        return jsonify({"error": "TELEGRAM_BOT_TOKEN not set"}), 500
+    try:
+        update = request.get_json(force=True, silent=True) or {}
+        process_update(update)
+    except Exception as e:
+        print(f"webhook error: {e}")
+    return "", 200
+
+
+@app.route('/api/telegram/setup')
+def telegram_setup():
+    """Hit this once after deploy: /api/telegram/setup?url=https://your-app.vercel.app"""
+    if not TG_TOKEN:
+        return jsonify({"error": "TELEGRAM_BOT_TOKEN not set"}), 500
+    base = request.args.get('url')
+    if not base:
+        return jsonify({"error": "pass ?url=https://your-app.vercel.app"}), 400
+    webhook_url = f"{base.rstrip('/')}/api/telegram/{TG_SECRET}"
+    r = requests.get(f"{TG_API}/setWebhook",
+                     params={"url": webhook_url}, timeout=15).json()
+    return jsonify({"webhook_url": webhook_url, "response": r})
+
+
+# ── VERCEL HANDLER (existing) ──
+def handler(request):
+    return app(request.environ, request.start_response)
