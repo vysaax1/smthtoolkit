@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from collections import Counter
 from flask import Flask, request, jsonify, send_from_directory, send_file
 
-app = Flask(__name__, static_folder='../public', static_url_path='')
+app = Flask(__name__)
 
 VERSION = "3.0"
 WATERMARK = "=" * 40 + "\n               SMTH©2026\n            PROPERTY OF SMTH\n" + "=" * 40 + "\n\n"
@@ -266,7 +266,6 @@ def api_split():
 
 @app.route('/')
 def index():
-    # Cari path absolut folder public
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     public_dir = os.path.join(base_dir, 'public')
     return send_from_directory(public_dir, 'index.html')
@@ -672,8 +671,3 @@ def telegram_setup():
     r = requests.get(f"{TG_API}/setWebhook",
                      params={"url": webhook_url}, timeout=15).json()
     return jsonify({"webhook_url": webhook_url, "response": r})
-
-
-# ── VERCEL HANDLER (existing) ──
-def handler(request):
-    return app(request.environ, request.start_response)
