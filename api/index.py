@@ -266,7 +266,10 @@ def api_split():
 
 @app.route('/')
 def index():
-    return send_from_directory('../public', 'index.html')
+    # Cari path absolut folder public
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    public_dir = os.path.join(base_dir, 'public')
+    return send_from_directory(public_dir, 'index.html')
 
 # ============================================================================
 #                     TELEGRAM BOT — WEBHOOK
