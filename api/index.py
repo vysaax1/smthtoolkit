@@ -671,3 +671,5 @@ def telegram_setup():
     r = requests.get(f"{TG_API}/setWebhook",
                      params={"url": webhook_url}, timeout=15).json()
     return jsonify({"webhook_url": webhook_url, "response": r})
+
+application = app
